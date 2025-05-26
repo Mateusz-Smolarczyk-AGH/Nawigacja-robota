@@ -1,0 +1,163 @@
+#VRML_SIM R2023b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/robots/k-team/khepera4/protos/Khepera4.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Wall.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/floors/protos/Floor.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Roughcast.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation 0.0671854501303772 -0.9966167564635815 0.04734084945149436 4.661706361102497
+  position 0.4437644516631321 0.21305460225793862 3.5423330918079086
+}
+Background {
+  skyColor [
+    1 1 1
+  ]
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction 0.1 -0.5 0.3
+}
+Wall {
+  translation 0.484029 -0.0310977 0
+  rotation 0 0 1 -1.3089953071795861
+  name "wall(1)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 2 1 0
+  rotation 0 0 1 -1.5707896938995747
+  name "wall(9)"
+  size 0.2 0.02 0.0001
+  appearance Roughcast {
+    colorOverride 0.266667 1 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 2 1 0
+  name "wall(2)"
+  size 0.2 0.02 0.0001
+  appearance Roughcast {
+    colorOverride 0.266667 1 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation 0.284711 -0.942908 0
+  rotation 0 0 1 -0.523595307179586
+  name "wall(7)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 0.869026 1.02915 0
+  rotation 0 0 1 -0.523595307179586
+  name "wall(20)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 1.62919 0.797131 0
+  rotation 0 0 1 3.46682e-06
+  name "wall(4)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 0.377691 0.0195516 0
+  rotation 0 0 1 3.77397e-06
+  name "wall(3)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 2.30081 0.849103 0
+  rotation 0 0 -1 0.523595
+  name "wall(12)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 0.0456789 1.64306 0
+  rotation 0 0 -1 0.523595
+  name "wall(13)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 0.255218 1.626 0
+  rotation 0 0 -1 0.523595
+  name "wall(14)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 2.32591 1.19257 0
+  rotation 0 0 -1 0.523595
+  name "wall(15)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 0.46 -2.02 0
+  rotation 0 0 1 3.77397e-06
+  name "wall(16)"
+  size 0.25 0.25 0.1
+}
+Wall {
+  translation 1.39713 1.24385 0
+  rotation 0 0 -1 0.523595
+  name "wall(17)"
+  size 0.1 0.1 0.1
+}
+Wall {
+  translation 1.49572 1.51693 0
+  rotation 0 0 1 -0.7854053071795866
+  name "wall(8)"
+  size 0.5 0.3 0.1
+}
+Wall {
+  translation 2.01286 -0.026119 0
+  rotation 0 0 1 1.57079
+  name "wall(10)"
+  size 0.5 0.3 0.1
+}
+Wall {
+  translation 0.965644 -2.03899 0
+  rotation 0 0 1 0.261793
+  name "wall(11)"
+  size 0.5 0.3 0.1
+}
+Wall {
+  translation 1.61507 0.326714 0
+  rotation 0 0 1 1.57079
+  name "wall(5)"
+  size 0.5 0.1 0.1
+}
+Wall {
+  translation 0.90507 1.74671 0
+  rotation 0 0 1 3.14159
+  name "wall(18)"
+  size 0.5 0.1 0.1
+}
+Wall {
+  translation 1.21789 -1.42648 0
+  rotation 0 0 -1 5.92017e-06
+  name "wall(6)"
+  size 0.5 0.1 0.1
+}
+Wall {
+  translation 0.907878 -1.37649 0
+  rotation 0 0 1 3.14159
+  name "wall(19)"
+  size 0.5 0.1 0.1
+}
+Khepera4 {
+  hidden position_0_0 1442.8819397875088
+  hidden position_0_1 2188.9122868576364
+  hidden rotation_1 0.6859807841370282 -0.6859808390324158 0.24261214370911174 3.6176193864804636
+  hidden rotation_2 -0.3602615140585526 0.36026158622472326 -0.8604784895504858 1.7205006202948783
+  rotation 1.8272321365409318e-08 -8.729628840169973e-08 0.9999999999999961 0
+  controller "ctrl_1"
+}
+Floor {
+}

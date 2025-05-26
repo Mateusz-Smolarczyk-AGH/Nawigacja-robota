@@ -1,0 +1,342 @@
+// File:          ctrl_1.cpp
+// Date:         04.10.2023
+// Description:  praca inz
+// Author:       Mateusz Smolarczyk
+// Modifications:
+
+#include <webots/Robot.hpp>
+#include <webots/Motor.hpp>
+#include <webots/DistanceSensor.hpp>
+#include <webots/Accelerometer.hpp>
+#include <webots/PositionSensor.hpp>
+#include <cmath>
+
+# define PI           3.14159265358979323846  /* pi */
+# define DISTANCE_BETWEEN_WHEELS 105.4 //mm
+# define WHEEL_R 21 //mm
+// All the webots classes are defined in the "webots" namespace
+using namespace webots;
+static const char *infared_sensor_names[8] = {
+  "rear right infrared sensor",
+  "right infrared sensor",
+  "front right infrared sensor",
+  "front infrared sensor", 
+  "front left infrared sensor",
+  "left infrared sensor",
+  "rear left infrared sensor",
+  "rear infrared sensor"};
+static const char *ultrasonic_sensor_names[5] = {
+  "front ultrasonic sensor", 
+  "front right ultrasonic sensor",
+  "right ultrasonic sensor",
+  "left ultrasonic sensor",
+  "front left ultrasonic sensor"};
+
+// void map(std::list<T> &angle_array, std::list<T> &distance_array
+
+// int wall_detection(){
+  
+// }
+
+void odometry(double left_pos_diff, double right_pos_dif, double *x, double *y, double *angle){
+  double dl = left_pos_diff * WHEEL_R;
+  double dr = right_pos_dif * WHEEL_R;
+  double theta = (dr - dl)/(DISTANCE_BETWEEN_WHEELS);
+  double d = (dl + dr)/2.0;
+  if (fabs(theta) > 0.04){
+      d = ((dl + dr)*sin(theta/2))/theta;}
+    
+  *x = *x + d * cos(*angle + theta/2.0);
+  *y = *y + d * sin(*angle + theta/2.0);
+  *angle = *angle + theta;
+  if (*angle < -PI){
+  *angle = *angle + 2*PI;}
+  if (*angle > PI){
+  *angle = *angle - 2*PI;} 
+}
+
+double rad_to_position(double rad_of_robot){
+  double dist_of_wheel = DISTANCE_BETWEEN_WHEELS * rad_of_robot / 2;
+  return dist_of_wheel/WHEEL_R;}
+
+double angle_to_point(double end_x, double end_y, double x, double y, double angle){
+  double x_diff = end_x - x;
+  double y_diff = end_y - y;
+  double absolute;
+  if (x_diff == 0){absolute = PI/2;} 
+  else{absolute = atan((y_diff)/(x_diff));}
+
+  if(x_diff <= 0 and y_diff < 0){
+    absolute = absolute - PI;}
+  if(x_diff <= 0 and y_diff > 0){
+    absolute = -absolute + PI;}
+  double result = absolute - angle;
+  if (result > PI){result = result - 2*PI;}
+  if (result < -PI){result = result + 2*PI;}
+  return result;
+}
+
+void turn_to_point(double end_x, double end_y, double x, double y, double angle, double* right_pos, double* left_pos){
+  double rad_angle = angle_to_point(end_x, end_y, x, y, angle);
+  double turn_angle = rad_to_position(rad_angle);
+  *right_pos = *right_pos + turn_angle;
+  *left_pos = *left_pos - turn_angle;}
+
+void from_point_to_point(double end_x, double end_y, double x, double y, double angle, double* right_pos, double* left_pos){
+  double distance = sqrt(pow(end_x - x, 2) + pow(end_y - y, 2));
+  *right_pos = *right_pos + distance/WHEEL_R;
+  *left_pos = *left_pos + distance/WHEEL_R;}
+
+double degree_to_position(int degree){
+  double rad_of_robot = degree * PI / 180;
+  double dist_of_wheel = DISTANCE_BETWEEN_WHEELS * rad_of_robot / 2;
+  return dist_of_wheel/WHEEL_R;}
+  
+
+  
+int hit_detection(double acc, int break_flag){
+  if (acc < -3 and break_flag == 0){
+    return 1;
+  }
+  else{
+  return 0;}
+}
+
+
+int main(int argc, char **argv) {
+  // create the Robot instance.
+  Robot *robot = new Robot();
+  int timeStep = (int)robot->getBasicTimeStep();
+
+  // motor setup
+  Motor *left_motor = robot->getMotor("left wheel motor");
+  Motor *right_motor = robot->getMotor("right wheel motor");  
+  int break_flag = 0;
+  double motor_speed = PI;
+  left_motor->setVelocity(motor_speed);
+  right_motor->setVelocity(motor_speed);
+  
+
+  //distance sensor setup
+  DistanceSensor *infared_distanceSensor[8];
+  for (int i = 0; i < 8; ++i) {
+    infared_distanceSensor[i] = robot->getDistanceSensor(infared_sensor_names[i]);
+    infared_distanceSensor[i]->enable(timeStep);}
+  DistanceSensor *ultrasonic_distanceSensor[5];
+  for (int i = 0; i < 5; ++i) {
+    ultrasonic_distanceSensor[i] = robot->getDistanceSensor(ultrasonic_sensor_names[i]);
+    ultrasonic_distanceSensor[i]->enable(timeStep);}   
+  double infared_sensors_angle[9] = {-PI *3/4, -PI/2, -PI/4, 0, PI/4, PI/2, PI*3/4, PI, -PI};
+
+  
+  //position sensor setup
+  PositionSensor *position[2];
+  position[0] = robot->getPositionSensor("left wheel sensor");
+  position[1] = robot->getPositionSensor("right wheel sensor");
+  position[0]->enable(timeStep);
+  position[1]->enable(timeStep);
+  double x = 0.0;
+  double y = 0.0;
+  double angle = 0.0;
+  double last_left_position = position[0]->getValue();
+  double last_right_position = position[1]->getValue();
+  double actual_left_position = position[0]->getValue();
+  double actual_right_position = position[1]->getValue();
+  int angle_of_change = 0;
+  double position_change = degree_to_position(angle_of_change);
+  int right = 1;
+  double map[3][225];
+  int angle_difference_ultrasonic[5] = {0, -45, -90, 90, 45};
+  int count = 0;
+  int map_flag = 1;
+  double left_pos = actual_left_position;
+  double right_pos = actual_right_position;
+
+  //accelerometer setup
+  Accelerometer *acc = robot->getAccelerometer("accelerometer");
+  acc->enable(timeStep);
+
+  // first step flag
+  int step = 0;
+  int blocked_path = 0;
+  //-------------------------------------------------------------------------
+  // ----------------------------- MAIN LOOP --------------------------------
+  //-------------------------------------------------------------------------
+  while (robot->step(timeStep) != -1) {
+    // On first step
+    if (step == 0){
+    //remeber start position
+      left_pos = position[0]->getValue();
+      right_pos = position[1]->getValue();
+      std::cout << "first" << std::endl;
+      left_motor->setPosition(INFINITY);
+      right_motor->setPosition(INFINITY);
+      step = 1;
+      }
+     //read sensors
+    double inf_dist_value[8];
+    for (int i = 0; i < 8; ++i) {
+      inf_dist_value[i] = infared_distanceSensor[i]->getValue();}
+    const double *value_acc = acc->getValues();
+    actual_left_position = position[0]->getValue();
+    actual_right_position = position[1]->getValue();
+    double left_pos_diff = actual_left_position - last_left_position;
+    double right_pos_diff = actual_right_position - last_right_position;
+    double dist_to_target = fabs(right_pos - actual_right_position) + fabs(left_pos - actual_left_position);
+    
+    // std::cout << "right_pos_diff: " << right_pos_diff << std::endl;
+    std::cout << "left_pos_diff: " << left_pos_diff << std::endl;
+    std::cout << "dist_to_target: " << dist_to_target << std::endl;
+    
+    //calculate odometry
+    if(not isnan(left_pos_diff) and not isnan(right_pos_diff)){
+      odometry(left_pos_diff, right_pos_diff, &x, &y, &angle);}
+    std::cout << "right_pos: " << right_pos << std::endl;
+    std::cout << "actual_right_position: " << actual_right_position << std::endl;
+
+
+    double x_end = 1200;
+    double y_end = 460;
+
+
+    // if (step == 1){
+    // turn_to_point(x_end, y_end, x, y, angle, &right_pos, &left_pos);
+    // std::cout << "step1 right_pos: " << right_pos << std::endl;
+    // step = 2;}
+    
+    // if (step == 2 and dist_to_target < 0.1 and left_pos_diff == 0){
+      // left_motor->setPosition(INFINITY);
+      // right_motor->setPosition(INFINITY);
+    // step = 3;}
+
+    if (fabs(x - x_end) < 1 and fabs(y - y_end) < 1){
+      left_motor->setPosition(actual_left_position);
+      right_motor->setPosition(actual_right_position);
+      left_motor->setVelocity(0);
+      right_motor->setVelocity(0);
+      break;
+    }
+
+ 
+      
+    double angle_to_destiny = angle_to_point(x_end, y_end, x, y, angle);
+    std::cout << "x: " << x << std::endl;
+    std::cout << "y: " << y << std::endl;
+    std::cout << "angle: " << angle << std::endl;
+    std::cout << "angle_to_destiny: " << angle_to_destiny << std::endl;
+
+    // map
+
+    // if (right_pos_diff == 0 and map_flag == 1){
+      // std::cout << "dist: " << inf_dist_value[0] << std::endl;
+      // std::cout << "angle: " << angle*180/PI << std::endl;
+      // std::cout << "angle_of_change: " << angle_of_change << std::endl;
+      // angle_of_change = angle_of_change + right;
+      // if (fabs(angle_of_change) > 22){
+        // right = right * (-1);
+        // count++;
+        // std::cout << "count: " << count << std::endl;
+      // }
+      // for (int i = 0; i < 5; ++i) {
+        // map[0][angle_of_change + 112 + angle_difference_ultrasonic[i]] = angle_of_change + angle_difference_ultrasonic[i];
+        // map[1][angle_of_change + 112 + angle_difference_ultrasonic[i]] = angle*180/PI + angle_difference_ultrasonic[i];
+        // map[2][angle_of_change + 112 + angle_difference_ultrasonic[i]] = ultrasonic_distanceSensor[i]->getValue();
+        // std::cout << "front: " << ultrasonic_distanceSensor[0]->getValue() << std::endl;
+        // std::cout << "angle_difference_ultrasonic: " << angle_difference_ultrasonic[i] << std::endl;
+      // }
+      // if(count == 2 and angle_of_change == 1){
+        // std::cout << "angle" << "  |   " << "distance" << std::endl;
+        // for (int i = 0; i < 3; ++i){
+          // std::cout << "[";
+          // for (int j = 0; j < 225; ++j){
+            // std::cout << map[i][j] << ", ";}  
+         // std::cout << std::endl;}
+        // map_flag = 0;}
+      // else{
+      // position_change = degree_to_position(360);
+      // left_motor->setPosition(start_left_position - position_change);
+      // right_motor->setPosition(start_right_position + position_change);//}
+    // }
+    
+    // for (int i = 0; i < 360; i++) {
+     
+      // while (speed > 1){
+        // speed = left_motor->getVelocity();
+        // std::cout << "speedinwhile: " << speed << std::endl;
+      // }
+// }    
+    
+    
+    //motor control
+    
+    // left_motor->setPosition(start_left_position + position_change);
+    // right_motor->setPosition(start_right_position - position_change);
+    // left_motor->setPosition(INFINITY);
+    // right_motor->setPosition(INFINITY);
+    int sensor_idx;
+    double min_value = 100;
+    for(int i = 0; i < 9; i++){
+      double act_value = fabs(infared_sensors_angle[i] - angle_to_destiny);
+      if (act_value < min_value){
+        min_value = act_value;
+        sensor_idx = i;
+        if(i==8){sensor_idx = 7;}
+      }
+    }
+    std::cout << "sensor_to_target: " << infared_sensor_names[sensor_idx] << std::endl;
+    
+    double right_offset = 0;
+    double left_offset = 0;
+    if (inf_dist_value[3] > 200 or inf_dist_value[2] > 520 or inf_dist_value[4] > 520){
+      if (inf_dist_value[2] < 180 and inf_dist_value[4] < 180){
+        blocked_path = 1;
+        if(angle_to_destiny < 0){right_offset = -2* motor_speed;}
+        else{left_offset = -2* motor_speed;}}
+      else{
+        if (inf_dist_value[2] > inf_dist_value[4]){ //turn left
+          left_offset = -2*motor_speed;}
+        else{right_offset = -2* motor_speed;}}}
+        
+     else{
+      if (angle_to_destiny < -0.1 
+        and inf_dist_value[1] < 200
+        and inf_dist_value[2] < 200 
+        and inf_dist_value[sensor_idx] < 200){
+            std::cout << "!!!!!!!!!!!!!turned right!!!!!!!!!!: " << std::endl;
+        right_offset = -2* motor_speed;}
+      if (angle_to_destiny > 0.1 
+        and inf_dist_value[5] < 200 
+        and inf_dist_value[4] < 200 
+        and inf_dist_value[sensor_idx] < 200){
+            std::cout << "!!!!!!!!!!!!!turned left!!!!!!!!!!: " << std::endl;
+        left_offset = -2*motor_speed;}
+    }
+    // if (fabs(angle_to_destiny) > 0.1 and angle_to_destiny < 0 and inf_dist_value[1] < 200){
+        // right_offset = -motor_speed;
+        // left_offset = motor_speed;
+    // }
+ 
+    // if (right_offset == 0 and left_offset == 0){
+      // break_flag = 1;}
+    // else {break_flag = 0;}
+    
+    // if (hit_detection(value_acc[0], break_flag)){
+      // std::cout << "hit_detection " << value_acc[0] << std::endl;
+
+    // }
+    
+    
+    right_motor->setVelocity(motor_speed + right_offset);
+    left_motor->setVelocity(motor_speed + left_offset);
+    last_left_position = actual_left_position;
+    last_right_position = actual_right_position;
+                std::cout << "right_motor: " << motor_speed + right_offset << std::endl;
+            std::cout << "left_motor: " << motor_speed + left_offset << std::endl;
+
+  };
+
+  // Enter here exit cleanup code.
+
+  delete robot;
+  return 0;
+}
